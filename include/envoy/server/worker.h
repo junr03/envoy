@@ -29,7 +29,7 @@ public:
    * @param completion supplies the completion to call when the listener has been added (or not) on
    *                   the worker.
    */
-  virtual void addListener(Network::ListenerConfig& listener,
+  virtual void addListener(Network::AbstractListener& listener,
                            AddListenerCompletion completion) PURE;
 
   /**
@@ -62,7 +62,7 @@ public:
    * @param completion supplies the completion to be called when the listener has been removed.
    *        This completion is called on the worker thread. No locking is performed by the worker.
    */
-  virtual void removeListener(Network::ListenerConfig& listener,
+  virtual void removeListener(Network::AbstractListener& listener,
                               std::function<void()> completion) PURE;
 
   /**
@@ -72,7 +72,7 @@ public:
    * accepting new connections. This completion is called on the worker thread. No locking is
    * performed by the worker.
    */
-  virtual void stopListener(Network::ListenerConfig& listener,
+  virtual void stopListener(Network::AbstractListener& listener,
                             std::function<void()> completion) PURE;
 };
 

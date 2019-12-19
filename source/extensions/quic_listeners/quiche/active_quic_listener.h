@@ -80,7 +80,7 @@ public:
   // Network::ActiveUdpListenerFactory.
   Network::ConnectionHandler::ActiveListenerPtr
   createActiveUdpListener(Network::ConnectionHandler& parent, Event::Dispatcher& disptacher,
-                          Network::ListenerConfig& config) const override {
+                          Network::AbstractListener& config) const override {
     return std::make_unique<ActiveQuicListener>(disptacher, parent, config, quic_config_);
   }
   bool isTransportConnectionless() const override { return false; }

@@ -9,7 +9,7 @@ namespace Server {
 Network::ConnectionHandler::ActiveListenerPtr
 ActiveRawUdpListenerFactory::createActiveUdpListener(Network::ConnectionHandler& parent,
                                                      Event::Dispatcher& dispatcher,
-                                                     Network::ListenerConfig& config) const {
+                                                     Network::AbstractListener& config) const {
   return std::make_unique<ActiveUdpListener>(parent, dispatcher, config);
 }
 

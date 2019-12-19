@@ -64,10 +64,10 @@ envoy::admin::v2alpha::ListenersConfigDump_DynamicListener* getOrCreateDynamicLi
 // Given a listener, dumps the version info, update time and configuration into the
 // DynamicListenerState provided.
 void fillState(envoy::admin::v2alpha::ListenersConfigDump_DynamicListenerState& state,
-               const ListenerImpl& listener) {
+               const Network::AbstractListener& listener) {
   state.set_version_info(listener.versionInfo());
   state.mutable_listener()->MergeFrom(listener.config());
-  TimestampUtil::systemClockToTimestamp(listener.last_updated_, *(state.mutable_last_updated()));
+  TimestampUtil::systemClockToTimestamp(listener.lastUpdated(), *(state.mutable_last_updated()));
 }
 
 } // namespace
@@ -243,7 +243,7 @@ ProtobufTypes::MessagePtr ListenerManagerImpl::dumpListenerConfigs() {
     if (listener->blockRemove()) {
       auto& static_listener = *config_dump->mutable_static_listeners()->Add();
       static_listener.mutable_listener()->MergeFrom(listener->config());
-      TimestampUtil::systemClockToTimestamp(listener->last_updated_,
+      TimestampUtil::systemClockToTimestamp(listener->lastUpdated(),
                                             *(static_listener.mutable_last_updated()));
       continue;
     }
@@ -478,7 +478,7 @@ bool ListenerManagerImpl::shareSocketWithOtherListener(
   return false;
 }
 
-void ListenerManagerImpl::drainListener(ListenerImplPtr&& listener) {
+void ListenerManagerImpl::drainListener(Network::AbstractListenerPtr&& listener) {
   // First add the listener to the draining list.
   std::list<DrainingListener>::iterator draining_it = draining_listeners_.emplace(
       draining_listeners_.begin(), std::move(listener), workers_.size());
@@ -554,8 +554,8 @@ ListenerManagerImpl::getListenerByName(ListenerList& listeners, const std::strin
   return ret;
 }
 
-std::vector<std::reference_wrapper<Network::ListenerConfig>> ListenerManagerImpl::listeners() {
-  std::vector<std::reference_wrapper<Network::ListenerConfig>> ret;
+std::vector<std::reference_wrapper<Network::AbstractListener>> ListenerManagerImpl::listeners() {
+  std::vector<std::reference_wrapper<Network::AbstractListener>> ret;
   ret.reserve(active_listeners_.size());
   for (const auto& listener : active_listeners_) {
     ret.push_back(*listener);
@@ -563,7 +563,7 @@ std::vector<std::reference_wrapper<Network::ListenerConfig>> ListenerManagerImpl
   return ret;
 }
 
-void ListenerManagerImpl::addListenerToWorker(Worker& worker, ListenerImpl& listener) {
+void ListenerManagerImpl::addListenerToWorker(Worker& worker, Network::AbstractListener& listener) {
   worker.addListener(listener, [this, &listener](bool success) -> void {
     // The add listener completion runs on the worker thread. Post back to the main thread to
     // avoid locking.
@@ -678,7 +678,7 @@ void ListenerManagerImpl::startWorkers(GuardDog& guard_dog) {
   }
 }
 
-void ListenerManagerImpl::stopListener(Network::ListenerConfig& listener,
+void ListenerManagerImpl::stopListener(Network::AbstractListener& listener,
                                        std::function<void()> callback) {
   const auto workers_pending_stop = std::make_shared<std::atomic<uint32_t>>(workers_.size());
   for (const auto& worker : workers_) {
@@ -692,7 +692,7 @@ void ListenerManagerImpl::stopListener(Network::ListenerConfig& listener,
 
 void ListenerManagerImpl::stopListeners(StopListenersType stop_listeners_type) {
   stop_listeners_type_ = stop_listeners_type;
-  for (Network::ListenerConfig& listener : listeners()) {
+  for (Network::AbstractListener& listener : listeners()) {
     if (stop_listeners_type != StopListenersType::InboundOnly ||
         listener.direction() == envoy::api::v2::core::TrafficDirection::INBOUND) {
       ENVOY_LOG(debug, "begin stop listener: name={}", listener.name());

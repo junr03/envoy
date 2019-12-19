@@ -136,7 +136,7 @@ public:
     ASSERT(lds_api_ == nullptr);
     lds_api_ = factory_.createLdsApi(lds_config);
   }
-  std::vector<std::reference_wrapper<Network::ListenerConfig>> listeners() override;
+  std::vector<std::reference_wrapper<Network::AbstractListener>> listeners() override;
   uint64_t numConnections() override;
   bool removeListener(const std::string& listener_name) override;
   void startWorkers(GuardDog& guard_dog) override;
@@ -150,20 +150,20 @@ public:
   ListenerComponentFactory& factory_;
 
 private:
-  using ListenerList = std::list<ListenerImplPtr>;
+  using ListenerList = std::list<Network::AbstractListenerPtr>;
 
   bool addOrUpdateListenerInternal(const envoy::api::v2::Listener& config,
                                    const std::string& version_info, bool added_via_api,
                                    const std::string& name);
   struct DrainingListener {
-    DrainingListener(ListenerImplPtr&& listener, uint64_t workers_pending_removal)
+    DrainingListener(Network::AbstractListenerPtr&& listener, uint64_t workers_pending_removal)
         : listener_(std::move(listener)), workers_pending_removal_(workers_pending_removal) {}
 
-    ListenerImplPtr listener_;
+    Network::AbstractListenerPtr listener_;
     uint64_t workers_pending_removal_;
   };
 
-  void addListenerToWorker(Worker& worker, ListenerImpl& listener);
+  void addListenerToWorker(Worker& worker, Network::AbstractListener& listener);
   ProtobufTypes::MessagePtr dumpListenerConfigs();
   static ListenerManagerStats generateStats(Stats::Scope& scope);
   static bool hasListenerWithAddress(const ListenerList& list,
@@ -191,7 +191,7 @@ private:
    * present to allow connection draining.
    * @param listener supplies the listener to drain.
    */
-  void drainListener(ListenerImplPtr&& listener);
+  void drainListener(Network::AbstractListenerPtr&& listener);
 
   /**
    * Stop a listener. The listener will stop accepting new connections and its socket will be
@@ -200,7 +200,7 @@ private:
    * @param completion supplies the completion to be called when all workers are stopped accepting
    * new connections. This completion is called on the main thread.
    */
-  void stopListener(Network::ListenerConfig& listener, std::function<void()> completion);
+  void stopListener(Network::AbstractListener& listener, std::function<void()> completion);
 
   /**
    * Get a listener by name. This routine is used because listeners have inherent order in static

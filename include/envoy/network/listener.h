@@ -6,11 +6,13 @@
 
 #include "envoy/api/io_error.h"
 #include "envoy/api/v2/core/base.pb.h"
+#include "envoy/api/v2/lds.pb.h"
 #include "envoy/common/exception.h"
 #include "envoy/network/connection.h"
 #include "envoy/network/connection_balancer.h"
 #include "envoy/network/listen_socket.h"
 #include "envoy/stats/scope.h"
+#include "envoy/server/drain_manager.h"
 
 namespace Envoy {
 namespace Network {
@@ -52,10 +54,61 @@ public:
 
 using ListenSocketFactorySharedPtr = std::shared_ptr<ListenSocketFactory>;
 
+class AbstractListener {
+public:
+  virtual ~AbstractListener() = default;
+
+  /**
+   * @return ListenSocketFactory& the factory to create listen socket.
+   */
+  virtual ListenSocketFactory& listenSocketFactory() PURE;
+
+  /**
+   * @return uint64_t the tag the listener should use for connection handler tracking.
+   */
+  virtual uint64_t listenerTag() const PURE;
+
+  /**
+   * @return const std::string& the listener's name.
+   */
+  virtual const std::string& name() const PURE;
+
+  /**
+   * Helper functions to determine whether a listener is blocked for update or remove.
+   */
+  virtual bool blockUpdate(uint64_t new_hash) PURE;
+  virtual bool blockRemove() PURE;
+
+  virtual Network::Address::InstanceConstSharedPtr address() const PURE;
+
+  virtual const envoy::api::v2::Listener& config() const PURE;
+
+  // TODO: look at deleting this or listenSocketFactory.
+  virtual const Network::ListenSocketFactorySharedPtr& getSocketFactory() const PURE;
+
+  virtual void debugLog(const std::string& message) PURE;
+
+  virtual SystemTime lastUpdated() const PURE;
+  virtual const std::string& versionInfo() const PURE;
+  /**
+   * @return traffic direction of the listener.
+   */
+  virtual envoy::api::v2::core::TrafficDirection direction() const PURE;
+  virtual Server::DrainManager& localDrainManager() const PURE;
+  virtual bool onListenerCreateFailure() PURE;
+  /**
+   * @return factory pointer if listening on UDP socket, otherwise return
+   * nullptr.
+   */
+  virtual const ActiveUdpListenerFactory* udpListenerFactory() PURE;
+};
+
+using AbstractListenerPtr = std::unique_ptr<AbstractListener>;
+
 /**
  * A configuration for an individual listener.
  */
-class ListenerConfig {
+class ListenerConfig : public AbstractListener {
 public:
   virtual ~ListenerConfig() = default;
 
@@ -70,11 +123,6 @@ public:
    *         connection.
    */
   virtual FilterChainFactory& filterChainFactory() PURE;
-
-  /**
-   * @return ListenSocketFactory& the factory to create listen socket.
-   */
-  virtual ListenSocketFactory& listenSocketFactory() PURE;
 
   /**
    * @return bool specifies whether the listener should actually listen on the port.
@@ -115,27 +163,6 @@ public:
    * @return Stats::Scope& the stats scope to use for all listener specific stats.
    */
   virtual Stats::Scope& listenerScope() PURE;
-
-  /**
-   * @return uint64_t the tag the listener should use for connection handler tracking.
-   */
-  virtual uint64_t listenerTag() const PURE;
-
-  /**
-   * @return const std::string& the listener's name.
-   */
-  virtual const std::string& name() const PURE;
-
-  /**
-   * @return factory pointer if listening on UDP socket, otherwise return
-   * nullptr.
-   */
-  virtual const ActiveUdpListenerFactory* udpListenerFactory() PURE;
-
-  /**
-   * @return traffic direction of the listener.
-   */
-  virtual envoy::api::v2::core::TrafficDirection direction() const PURE;
 
   /**
    * @return the connection balancer for this listener. All listeners have a connection balancer,

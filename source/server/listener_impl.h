@@ -99,37 +99,42 @@ public:
                ProtobufMessage::ValidationVisitor& validation_visitor);
   ~ListenerImpl() override;
 
-  /**
-   * Helper functions to determine whether a listener is blocked for update or remove.
-   */
-  bool blockUpdate(uint64_t new_hash) { return new_hash == hash_ || !added_via_api_; }
-  bool blockRemove() { return !added_via_api_; }
+  void initialize();
+  void setSocketFactory(const Network::ListenSocketFactorySharedPtr& socket_factory);
+  void setSocketAndOptions(const Network::SocketSharedPtr& socket);
+  const Network::Socket::OptionsSharedPtr& listenSocketOptions() { return listen_socket_options_; }
 
+  // Network::ListenerConfig
   /**
    * Called when a listener failed to be actually created on a worker.
    * @return TRUE if we have seen more than one worker failure.
    */
-  bool onListenerCreateFailure() {
+  // FIXME this implies that AbstractListeners live on workers
+  bool onListenerCreateFailure() override {
     bool ret = saw_listener_create_failure_;
     saw_listener_create_failure_ = true;
     return ret;
   }
-
-  Network::Address::InstanceConstSharedPtr address() const { return address_; }
-  const envoy::api::v2::Listener& config() const { return config_; }
-  const Network::ListenSocketFactorySharedPtr& getSocketFactory() const { return socket_factory_; }
-  void debugLog(const std::string& message);
-  void initialize();
-  DrainManager& localDrainManager() const { return *local_drain_manager_; }
-  void setSocketFactory(const Network::ListenSocketFactorySharedPtr& socket_factory);
-  void setSocketAndOptions(const Network::SocketSharedPtr& socket);
-  const Network::Socket::OptionsSharedPtr& listenSocketOptions() { return listen_socket_options_; }
-  const std::string& versionInfo() const { return version_info_; }
-
-  // Network::ListenerConfig
+  // FIXME weird.
+  const Network::ActiveUdpListenerFactory* udpListenerFactory() override {
+    return udp_listener_factory_.get();
+  }
+  Server::DrainManager& localDrainManager() const override { return *local_drain_manager_; }
+  const std::string& versionInfo() const override { return version_info_; }
+  SystemTime lastUpdated() const override { return last_updated_; }
+  bool blockUpdate(uint64_t new_hash) override { return new_hash == hash_ || !added_via_api_; }
+  bool blockRemove() override { return !added_via_api_; }
+  Network::Address::InstanceConstSharedPtr address() const override { return address_; }
+  const envoy::api::v2::Listener& config() const override { return config_; }
+  const Network::ListenSocketFactorySharedPtr& getSocketFactory() const override {
+    return socket_factory_;
+  }
+  void debugLog(const std::string& message) override;
+  Network::ListenSocketFactory& listenSocketFactory() override { return *socket_factory_; }
+  uint64_t listenerTag() const override { return listener_tag_; }
+  const std::string& name() const override { return name_; }
   Network::FilterChainManager& filterChainManager() override { return filter_chain_manager_; }
   Network::FilterChainFactory& filterChainFactory() override { return *this; }
-  Network::ListenSocketFactory& listenSocketFactory() override { return *socket_factory_; }
   bool bindToPort() override { return bind_to_port_; }
   bool handOffRestoredDestinationConnections() const override {
     return hand_off_restored_destination_connections_;
@@ -144,11 +149,6 @@ public:
     return continue_on_listener_filters_timeout_;
   }
   Stats::Scope& listenerScope() override { return *listener_scope_; }
-  uint64_t listenerTag() const override { return listener_tag_; }
-  const std::string& name() const override { return name_; }
-  const Network::ActiveUdpListenerFactory* udpListenerFactory() override {
-    return udp_listener_factory_.get();
-  }
   Network::ConnectionBalancer& connectionBalancer() override { return *connection_balancer_; }
 
   // Server::Configuration::ListenerFactoryContext

@@ -117,7 +117,9 @@ envoy_cc_library(
         ":connection_balancer_interface",
         ":connection_interface",
         ":listen_socket_interface",
+        "//include/envoy/server:drain_manager_interface",
         "//include/envoy/stats:stats_interface",
+        "@envoy_api//envoy/api/v2:pkg_cc_proto",
         "@envoy_api//envoy/api/v2/core:pkg_cc_proto",
     ],
 )

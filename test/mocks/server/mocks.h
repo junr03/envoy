@@ -280,7 +280,7 @@ public:
   MOCK_METHOD3(addOrUpdateListener, bool(const envoy::api::v2::Listener& config,
                                          const std::string& version_info, bool modifiable));
   MOCK_METHOD1(createLdsApi, void(const envoy::api::v2::core::ConfigSource& lds_config));
-  MOCK_METHOD0(listeners, std::vector<std::reference_wrapper<Network::ListenerConfig>>());
+  MOCK_METHOD0(listeners, std::vector<std::reference_wrapper<Network::AbstractListener>>());
   MOCK_METHOD0(numConnections, uint64_t());
   MOCK_METHOD1(removeListener, bool(const std::string& listener_name));
   MOCK_METHOD1(startWorkers, void(GuardDog& guard_dog));

@@ -11,7 +11,7 @@ class ActiveRawUdpListenerFactory : public Network::ActiveUdpListenerFactory {
 public:
   Network::ConnectionHandler::ActiveListenerPtr
   createActiveUdpListener(Network::ConnectionHandler& parent, Event::Dispatcher& disptacher,
-                          Network::ListenerConfig& config) const override;
+                          Network::AbstractListener& config) const override;
 
   bool isTransportConnectionless() const override { return true; }
 };
