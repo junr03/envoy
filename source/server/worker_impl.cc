@@ -34,8 +34,7 @@ WorkerImpl::WorkerImpl(ThreadLocal::Instance& tls, ListenerHooks& hooks,
       [this](OverloadActionState state) { stopAcceptingConnectionsCb(state); });
 }
 
-void WorkerImpl::addListener(Network::AbstractListener& listener,
-                             AddListenerCompletion completion) {
+void WorkerImpl::addListener(Network::ListenerConfig& listener, AddListenerCompletion completion) {
   // All listener additions happen via post. However, we must deal with the case where the listener
   // can not be created on the worker. There is a race condition where 2 processes can successfully
   // bind to an address, but then fail to listen() with EADDRINUSE. During initial startup, we want
@@ -59,7 +58,7 @@ uint64_t WorkerImpl::numConnections() {
   return ret;
 }
 
-void WorkerImpl::removeListener(Network::AbstractListener& listener,
+void WorkerImpl::removeListener(Network::ListenerConfig& listener,
                                 std::function<void()> completion) {
   ASSERT(thread_);
   const uint64_t listener_tag = listener.listenerTag();
@@ -89,8 +88,7 @@ void WorkerImpl::stop() {
   }
 }
 
-void WorkerImpl::stopListener(Network::AbstractListener& listener,
-                              std::function<void()> completion) {
+void WorkerImpl::stopListener(Network::ListenerConfig& listener, std::function<void()> completion) {
   ASSERT(thread_);
   const uint64_t listener_tag = listener.listenerTag();
   dispatcher_->post([this, listener_tag, completion]() -> void {

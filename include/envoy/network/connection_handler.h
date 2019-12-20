@@ -41,7 +41,7 @@ public:
    * Adds a listener to the handler.
    * @param config listener configuration options.
    */
-  virtual void addListener(AbstractListener& config) PURE;
+  virtual void addListener(ListenerConfig& config) PURE;
 
   /**
    * Remove listeners using the listener tag as a key. All connections owned by the removed
@@ -125,7 +125,7 @@ public:
    */
   virtual ConnectionHandler::ActiveListenerPtr
   createActiveUdpListener(ConnectionHandler& parent, Event::Dispatcher& disptacher,
-                          Network::AbstractListener& config) const PURE;
+                          Network::ListenerConfig& config) const PURE;
 
   /**
    * @return true if the UDP passing through listener doesn't form stateful connections.

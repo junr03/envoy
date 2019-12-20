@@ -109,7 +109,7 @@ public:
    * Called when a listener failed to be actually created on a worker.
    * @return TRUE if we have seen more than one worker failure.
    */
-  // FIXME this implies that AbstractListeners live on workers
+  // FIXME this implies that ListenerConfigs live on workers
   bool onListenerCreateFailure() override {
     bool ret = saw_listener_create_failure_;
     saw_listener_create_failure_ = true;

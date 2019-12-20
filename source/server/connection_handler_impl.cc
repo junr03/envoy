@@ -27,7 +27,7 @@ void ConnectionHandlerImpl::decNumConnections() {
   --num_handler_connections_;
 }
 
-void ConnectionHandlerImpl::addListener(Network::AbstractListener& config) {
+void ConnectionHandlerImpl::addListener(Network::ListenerConfig& config) {
   ActiveListenerDetails details;
   if (config.listenSocketFactory().socketType() == Network::Address::SocketType::Stream) {
     auto tcp_listener = std::make_unique<ActiveTcpListener>(*this, config);
@@ -89,7 +89,7 @@ void ConnectionHandlerImpl::ActiveTcpListener::removeConnection(ActiveTcpConnect
 }
 
 ConnectionHandlerImpl::ActiveListenerImplBase::ActiveListenerImplBase(
-    Network::ConnectionHandler& parent, Network::AbstractListener& config)
+    Network::ConnectionHandler& parent, Network::ListenerConfig& config)
     : stats_({ALL_LISTENER_STATS(POOL_COUNTER(config.listenerScope()),
                                  POOL_GAUGE(config.listenerScope()),
                                  POOL_HISTOGRAM(config.listenerScope()))}),
@@ -408,8 +408,7 @@ ConnectionHandlerImpl::ActiveTcpConnection::~ActiveTcpConnection() {
 }
 
 ActiveUdpListener::ActiveUdpListener(Network::ConnectionHandler& parent,
-                                     Event::Dispatcher& dispatcher,
-                                     Network::AbstractListener& config)
+                                     Event::Dispatcher& dispatcher, Network::ListenerConfig& config)
     : ActiveUdpListener(
           parent,
           dispatcher.createUdpListener(config.listenSocketFactory().getListenSocket(), *this),
@@ -417,7 +416,7 @@ ActiveUdpListener::ActiveUdpListener(Network::ConnectionHandler& parent,
 
 ActiveUdpListener::ActiveUdpListener(Network::ConnectionHandler& parent,
                                      Network::UdpListenerPtr&& listener,
-                                     Network::AbstractListener& config)
+                                     Network::ListenerConfig& config)
     : ConnectionHandlerImpl::ActiveListenerImplBase(parent, config),
       udp_listener_(std::move(listener)), read_filter_(nullptr) {
   // Create the filter chain on creating a new udp listener

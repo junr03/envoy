@@ -35,6 +35,7 @@
 #include "common/stats/isolated_store_impl.h"
 
 #include "server/http/config_tracker_impl.h"
+#include "server/drain_manager_impl.h"
 
 #include "absl/strings/string_view.h"
 
@@ -381,7 +382,23 @@ private:
     }
     Network::ConnectionBalancer& connectionBalancer() override { return connection_balancer_; }
 
+    bool blockUpdate(uint64_t) override { return false; }
+    bool blockRemove() override { return false; }
+    Network::Address::InstanceConstSharedPtr address() const override { return nullptr; }
+    const envoy::api::v2::Listener& config() const override { return noop_listener_config_; }
+    // TODO: look at deleting this or listenSocketFactory.
+    const Network::ListenSocketFactorySharedPtr& getSocketFactory() const override {
+      return parent_.socket_factory_;
+    }
+    void debugLog(const std::string&) override { return &EMPTY_STRING; }
+    SystemTime lastUpdated() const override { return std::chrono::system_clock::now(); }
+    const std::string& versionInfo() const override { return &EMPTY_STRING; }
+    Server::DrainManager& localDrainManager() const override { return drain_manager_; }
+    bool onListenerCreateFailure() override { return false; }
+
     AdminImpl& parent_;
+    Server::NoOpDrainManagerImpl drain_manager_;
+    envoy::api::v2::Listener noop_listener_config_;
     const std::string name_;
     Stats::ScopePtr scope_;
     Http::ConnectionManagerListenerStats stats_;

@@ -54,10 +54,31 @@ public:
 
 using ListenSocketFactorySharedPtr = std::shared_ptr<ListenSocketFactory>;
 
-class AbstractListener {
+/**
+ * A configuration for an individual listener.
+ */
+class ListenerConfig {
 public:
-  virtual ~AbstractListener() = default;
+  virtual ~ListenerConfig() = default;
 
+  /////////////////
+
+  /**
+   * Helper functions to determine whether a listener is blocked for update or remove.
+   */
+  virtual bool blockUpdate(uint64_t new_hash) PURE;
+  virtual bool blockRemove() PURE;
+  virtual Network::Address::InstanceConstSharedPtr address() const PURE;
+  virtual const envoy::api::v2::Listener& config() const PURE;
+  // TODO: look at deleting this or listenSocketFactory.
+  virtual const Network::ListenSocketFactorySharedPtr& getSocketFactory() const PURE;
+  virtual void debugLog(const std::string& message) PURE;
+  virtual SystemTime lastUpdated() const PURE;
+  virtual const std::string& versionInfo() const PURE;
+  virtual Server::DrainManager& localDrainManager() const PURE;
+  virtual bool onListenerCreateFailure() PURE;
+
+  /////////////////
   /**
    * @return ListenSocketFactory& the factory to create listen socket.
    */
@@ -74,43 +95,17 @@ public:
   virtual const std::string& name() const PURE;
 
   /**
-   * Helper functions to determine whether a listener is blocked for update or remove.
-   */
-  virtual bool blockUpdate(uint64_t new_hash) PURE;
-  virtual bool blockRemove() PURE;
-
-  virtual Network::Address::InstanceConstSharedPtr address() const PURE;
-
-  virtual const envoy::api::v2::Listener& config() const PURE;
-
-  // TODO: look at deleting this or listenSocketFactory.
-  virtual const Network::ListenSocketFactorySharedPtr& getSocketFactory() const PURE;
-
-  virtual void debugLog(const std::string& message) PURE;
-
-  virtual SystemTime lastUpdated() const PURE;
-  virtual const std::string& versionInfo() const PURE;
-  /**
    * @return traffic direction of the listener.
    */
   virtual envoy::api::v2::core::TrafficDirection direction() const PURE;
-  virtual Server::DrainManager& localDrainManager() const PURE;
-  virtual bool onListenerCreateFailure() PURE;
+
   /**
    * @return factory pointer if listening on UDP socket, otherwise return
    * nullptr.
    */
   virtual const ActiveUdpListenerFactory* udpListenerFactory() PURE;
-};
 
-using AbstractListenerPtr = std::unique_ptr<AbstractListener>;
-
-/**
- * A configuration for an individual listener.
- */
-class ListenerConfig : public AbstractListener {
-public:
-  virtual ~ListenerConfig() = default;
+  ////////////////
 
   /**
    * @return FilterChainManager& the factory for adding and searching through configured
@@ -170,6 +165,8 @@ public:
    */
   virtual ConnectionBalancer& connectionBalancer() PURE;
 };
+
+using ListenerConfigPtr = std::unique_ptr<ListenerConfig>;
 
 /**
  * Callbacks invoked by a listener.

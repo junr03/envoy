@@ -66,7 +66,7 @@ public:
   uint64_t numConnections() override { return num_handler_connections_; }
   void incNumConnections() override;
   void decNumConnections() override;
-  void addListener(Network::AbstractListener& config) override;
+  void addListener(Network::ListenerConfig& config) override;
   void removeListeners(uint64_t listener_tag) override;
   void stopListeners(uint64_t listener_tag) override;
   void stopListeners() override;
@@ -79,14 +79,14 @@ public:
    */
   class ActiveListenerImplBase : public Network::ConnectionHandler::ActiveListener {
   public:
-    ActiveListenerImplBase(Network::ConnectionHandler& parent, Network::AbstractListener& config);
+    ActiveListenerImplBase(Network::ConnectionHandler& parent, Network::ListenerConfig& config);
 
     // Network::ConnectionHandler::ActiveListener.
     uint64_t listenerTag() override { return config_.listenerTag(); }
 
     ListenerStats stats_;
     PerHandlerListenerStats per_worker_stats_;
-    Network::AbstractListener& config_;
+    Network::ListenerConfig& config_;
   };
 
 private:
@@ -255,9 +255,9 @@ class ActiveUdpListener : public Network::UdpListenerCallbacks,
                           public Network::UdpReadFilterCallbacks {
 public:
   ActiveUdpListener(Network::ConnectionHandler& parent, Event::Dispatcher& dispatcher,
-                    Network::AbstractListener& config);
+                    Network::ListenerConfig& config);
   ActiveUdpListener(Network::ConnectionHandler& parent, Network::UdpListenerPtr&& listener,
-                    Network::AbstractListener& config);
+                    Network::ListenerConfig& config);
 
   // Network::UdpListenerCallbacks
   void onData(Network::UdpRecvData& data) override;

@@ -12,6 +12,16 @@
 namespace Envoy {
 namespace Server {
 
+class NoOpDrainManagerImpl : public DrainManager {
+public:
+  NoOpDrainManagerImpl();
+
+  // Server::DrainManager
+  bool drainClose() const override { return false; }
+  void startDrainSequence(std::function<void()>) override {}
+  void startParentShutdownSequence() override {}
+};
+
 /**
  * Implementation of drain manager that does the following by default:
  * 1) Terminates the parent process after 15 minutes.

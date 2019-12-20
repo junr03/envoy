@@ -315,6 +315,18 @@ public:
   MOCK_METHOD0(udpListenerFactory, const Network::ActiveUdpListenerFactory*());
   MOCK_METHOD0(connectionBalancer, ConnectionBalancer&());
 
+  // NEW
+  MOCK_METHOD1(blockUpdate, bool(uint64_t new_hash));
+  MOCK_METHOD0(blockRemove, bool());
+  MOCK_CONST_METHOD0(address, Network::Address::InstanceConstSharedPtr());
+  MOCK_CONST_METHOD0(config, const envoy::api::v2::Listener&());
+  MOCK_CONST_METHOD0(getSocketFactory, const Network::ListenSocketFactorySharedPtr&());
+  MOCK_METHOD1(debugLog, void(const std::string& message));
+  MOCK_CONST_METHOD0(lastUpdated, SystemTime());
+  MOCK_CONST_METHOD0(versionInfo, const std::string&());
+  MOCK_CONST_METHOD0(localDrainManager, Server::DrainManager&());
+  MOCK_METHOD0(onListenerCreateFailure, bool());
+
   envoy::api::v2::core::TrafficDirection direction() const override {
     return envoy::api::v2::core::TrafficDirection::UNSPECIFIED;
   }
@@ -344,7 +356,7 @@ public:
   MOCK_METHOD0(numConnections, uint64_t());
   MOCK_METHOD0(incNumConnections, void());
   MOCK_METHOD0(decNumConnections, void());
-  MOCK_METHOD1(addListener, void(AbstractListener& config));
+  MOCK_METHOD1(addListener, void(ListenerConfig& config));
   MOCK_METHOD1(removeListeners, void(uint64_t listener_tag));
   MOCK_METHOD1(stopListeners, void(uint64_t listener_tag));
   MOCK_METHOD0(stopListeners, void());
