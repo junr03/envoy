@@ -43,5 +43,5 @@ const envoy::service::listener::v3alpha::LdsDummy _lds_dummy_v3;
 const envoy::service::route::v3alpha::RdsDummy _rds_dummy_v3;
 const envoy::service::cluster::v3alpha::CdsDummy _cds_dummy_v3;
 const envoy::service::endpoint::v3alpha::EdsDummy _eds_dummy_v3;
-const envoy::service::route::v3alpha::SrdsDummy _srds_dummy_v4;
+const envoy::service::route::v3alpha::SrdsDummy _srds_dummy_v3;
 } // namespace Envoy
