@@ -12,6 +12,7 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/strip.h"
 #include "spdlog/spdlog.h"
+#include "spdlog/sinks/android_sink.h"
 
 namespace Envoy {
 namespace Logger {
@@ -21,7 +22,9 @@ namespace Logger {
 const char* Logger::DEFAULT_LOG_FORMAT = "[%Y-%m-%d %T.%e][%t][%l][%n] %v";
 
 Logger::Logger(const std::string& name) {
-  logger_ = std::make_shared<spdlog::logger>(name, Registry::getSink());
+  // logger_ = std::make_shared<spdlog::logger>(name, Registry::getSink());
+  logger_ = std::make_shared<spdlog::logger>(
+      name, std::make_shared<spdlog::sinks::android_sink<std::mutex>>());
   logger_->set_pattern(DEFAULT_LOG_FORMAT);
   logger_->set_level(spdlog::level::trace);
 
