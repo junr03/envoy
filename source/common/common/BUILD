@@ -132,10 +132,50 @@ envoy_cc_library(
     srcs = ["logger.cc"],
     hdrs = ["logger.h"],
     external_deps = ["abseil_synchronization"],
+    # deps = envoy_cc_platform_dep_try("logger_impl_lib") + [
     deps = [
+        ":base_logger",
+        ":essential_logger_delegates",
         ":lock_guard_lib",
         ":macros",
         ":non_copyable",
+    ],
+)
+
+envoy_cc_library(
+    name = "base_logger",
+    srcs = ["base_logger.cc"],
+    hdrs = ["base_logger.h"],
+)
+
+envoy_cc_library(
+    name = "logger_impl_lib_android_application",
+    srcs = ["android/logger_impl.cc"],
+    hdrs = ["android/logger_impl.h"],
+    strip_include_prefix = "android",
+    deps = [
+        ":base_logger",
+    ],
+)
+
+envoy_cc_library(
+    name = "logger_impl_lib_standard",
+    srcs = ["standard/logger_impl.cc"],
+    hdrs = ["standard/logger_impl.h"],
+    strip_include_prefix = "standard",
+    deps = [
+        ":base_logger",
+    ],
+)
+
+envoy_cc_library(
+    name = "logger_registry_lib",
+    srcs = ["logger_registry.cc"],
+    hdrs = ["logger_registry.h"],
+    deps = [
+        ":base_logger",
+        ":essential_logger_delegates_lib",
+        ":macros",
     ],
 )
 
@@ -161,6 +201,20 @@ envoy_cc_library(
         ":macros",
         ":minimal_logger_lib",
         "//include/envoy/access_log:access_log_interface",
+    ],
+)
+
+envoy_cc_library(
+    name = "essential_logger_delegates_lib",
+    srcs = ["essential_logger_delegates.cc"],
+    hdrs = ["essential_logger_delegates.h"],
+    external_deps = [
+        "abseil_synchronization",
+    ],
+    deps = [
+        ":base_logger",
+        ":lock_guard_lib",
+        ":non_copyable",
     ],
 )
 
