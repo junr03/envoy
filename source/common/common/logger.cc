@@ -11,8 +11,8 @@
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/strip.h"
-#include "spdlog/spdlog.h"
 #include "spdlog/sinks/android_sink.h"
+#include "spdlog/spdlog.h"
 
 namespace Envoy {
 namespace Logger {
