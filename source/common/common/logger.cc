@@ -17,20 +17,25 @@
 namespace Envoy {
 namespace Logger {
 
-#define GENERATE_LOGGER(X) Logger(#X),
+#define GENERATE_LOGGER(X) StandardLogger(#X),
 
 const char* Logger::DEFAULT_LOG_FORMAT = "[%Y-%m-%d %T.%e][%t][%l][%n] %v";
 
 Logger::Logger(const std::string& name) {
-  // logger_ = std::make_shared<spdlog::logger>(name, Registry::getSink());
-  logger_ = std::make_shared<spdlog::logger>(
-      name, std::make_shared<spdlog::sinks::android_sink<std::mutex>>());
   logger_->set_pattern(DEFAULT_LOG_FORMAT);
   logger_->set_level(spdlog::level::trace);
 
   // Ensure that critical errors, especially ASSERT/PANIC, get flushed
   logger_->flush_on(spdlog::level::critical);
 }
+
+StandardLogger::StandardLogger(const std::string& name)
+    : logger_(std::make_shared<spdlog::logger>(name, Registry::getSink())), Logger(name) {}
+
+AndroidLogger::AndroidLogger(const std::string& name)
+    : logger_(std::make_shared<spdlog::logger>(
+          name, std::make_shared<spdlog::sinks::android_sink<std::mutex>>())),
+      Logger(name) {}
 
 SinkDelegate::SinkDelegate(DelegatingLogSinkPtr log_sink)
     : previous_delegate_(log_sink->delegate()), log_sink_(log_sink) {

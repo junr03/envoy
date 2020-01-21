@@ -100,12 +100,22 @@ public:
 
   static const char* DEFAULT_LOG_FORMAT;
 
-private:
+protected:
   Logger(const std::string& name);
 
   std::shared_ptr<spdlog::logger> logger_; // Use shared_ptr here to allow static construction
                                            // of constant vector below.
   friend class Registry;
+};
+
+class StandardLogger : public Logger {
+private:
+  StandardLogger(const std::string& name);
+};
+
+class AndroidLogger : public Logger {
+private:
+  AndroidLogger(const std::string& name);
 };
 
 class DelegatingLogSink;
