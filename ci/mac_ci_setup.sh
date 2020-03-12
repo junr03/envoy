@@ -5,6 +5,9 @@
 
 # Setup bazelbuild tap
 brew tap bazelbuild/tap
+# Bazelisk replaces the bazel binary, so CI cannot install bazelbuild/tap/bazelisk
+# unless bazelbuild/tap/bazel is unlinked.
+brew unlink bazelbuild/tap/bazel
 
 function is_installed {
     brew ls --versions "$1" >/dev/null
