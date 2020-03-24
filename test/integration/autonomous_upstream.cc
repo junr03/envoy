@@ -35,6 +35,7 @@ AutonomousStream::~AutonomousStream() {
 void AutonomousStream::setEndStream(bool end_stream) {
   FakeStream::setEndStream(end_stream);
   if (end_stream) {
+    ENVOY_LOG_MISC(error, "send response");
     sendResponse();
   }
 }
@@ -51,6 +52,9 @@ void AutonomousStream::sendResponse() {
   }
 
   if (!headers.get_(RESET_AFTER_REQUEST).empty()) {
+    ENVOY_LOG_MISC(error, "encoding reset stream");
+      encodeHeaders(upstream_.responseHeaders(), false);
+
     encodeResetStream();
     return;
   }
@@ -58,6 +62,7 @@ void AutonomousStream::sendResponse() {
   int32_t response_body_length = 10;
   HeaderToInt(RESPONSE_SIZE_BYTES, response_body_length, headers);
 
+  ENVOY_LOG_MISC(error, "further encoding");
   encodeHeaders(upstream_.responseHeaders(), false);
   encodeData(response_body_length, true);
 }

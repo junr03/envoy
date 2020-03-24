@@ -27,6 +27,8 @@ ProtobufTypes::MessagePtr RawBufferSocketFactory::createEmptyConfigProto() {
   return std::make_unique<envoy::config::transport_socket::raw_buffer::v2::RawBuffer>();
 }
 
+DECLARE_FACTORY(UpstreamRawBufferSocketFactory);
+
 REGISTER_FACTORY(UpstreamRawBufferSocketFactory,
                  Server::Configuration::UpstreamTransportSocketConfigFactory){"raw_buffer"};
 

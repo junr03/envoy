@@ -135,6 +135,7 @@ void FakeStream::readDisable(bool disable) {
 }
 
 void FakeStream::onResetStream(Http::StreamResetReason, absl::string_view) {
+  ENVOY_LOG_MISC(error, "saw reset in autonomous");
   Thread::LockGuard lock(lock_);
   saw_reset_ = true;
   decoder_event_.notifyOne();

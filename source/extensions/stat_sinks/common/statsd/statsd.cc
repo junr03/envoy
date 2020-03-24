@@ -115,6 +115,7 @@ TcpStatsdSink::TcpStatsdSink(const LocalInfo::LocalInfo& local_info,
 }
 
 void TcpStatsdSink::flush(Stats::MetricSnapshot& snapshot) {
+  ENVOY_LOG_MISC(error, "flushing stats to tcp sink");
   TlsSink& tls_sink = tls_->getTyped<TlsSink>();
   tls_sink.beginFlush(true);
   for (const auto& counter : snapshot.counters()) {
