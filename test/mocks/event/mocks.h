@@ -124,7 +124,8 @@ public:
   MOCK_METHOD(void, deferredDelete_, (DeferredDeletable * to_delete));
   MOCK_METHOD(void, exit, ());
   MOCK_METHOD(SignalEvent*, listenForSignal_, (int signal_num, SignalCb cb));
-  MOCK_METHOD(void, post, (std::function<void()> callback));
+  MOCK_METHOD(void, post, (PostCb callback));
+  MOCK_METHOD(void, postNextIteration, (PostCb callback));
   MOCK_METHOD(void, run, (RunType type));
   MOCK_METHOD(const ScopeTrackedObject*, setTrackedObject, (const ScopeTrackedObject* object));
   MOCK_METHOD(bool, isThreadSafe, (), (const));

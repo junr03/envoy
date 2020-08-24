@@ -69,7 +69,8 @@ public:
   void deferredDelete(DeferredDeletablePtr&& to_delete) override;
   void exit() override;
   SignalEventPtr listenForSignal(int signal_num, SignalCb cb) override;
-  void post(std::function<void()> callback) override;
+  void post(PostCb callback) override;
+  void postNextIteration(PostCb callback) override;
   void run(RunType type) override;
   Buffer::WatermarkFactory& getWatermarkFactory() override { return *buffer_factory_; }
   const ScopeTrackedObject* setTrackedObject(const ScopeTrackedObject* object) override {
@@ -95,6 +96,7 @@ private:
   TimerPtr createTimerInternal(TimerCb cb);
   void updateApproximateMonotonicTimeInternal();
   void runPostCallbacks();
+  void runPostNextIterationCallbacks();
 
   // Validate that an operation is thread safe, i.e. it's invoked on the same thread that the
   // dispatcher run loop is executing on. We allow run_tid_ to be empty for tests where we don't
@@ -113,11 +115,13 @@ private:
   SchedulerPtr scheduler_;
   SchedulableCallbackPtr deferred_delete_cb_;
   SchedulableCallbackPtr post_cb_;
+  SchedulableCallbackPtr post_next_iteration_cb_;
   std::vector<DeferredDeletablePtr> to_delete_1_;
   std::vector<DeferredDeletablePtr> to_delete_2_;
   std::vector<DeferredDeletablePtr>* current_to_delete_;
   Thread::MutexBasicLockable post_lock_;
   std::list<std::function<void()>> post_callbacks_ ABSL_GUARDED_BY(post_lock_);
+  std::list<std::function<void()>> post_next_iteration_callbacks_ ABSL_GUARDED_BY(post_lock_);
   const ScopeTrackedObject* current_object_{};
   bool deferred_deleting_{};
   MonotonicTime approximate_monotonic_time_;

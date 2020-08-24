@@ -43,6 +43,8 @@ DispatcherImpl::DispatcherImpl(const std::string& name, Buffer::WatermarkFactory
       deferred_delete_cb_(base_scheduler_.createSchedulableCallback(
           [this]() -> void { clearDeferredDeleteList(); })),
       post_cb_(base_scheduler_.createSchedulableCallback([this]() -> void { runPostCallbacks(); })),
+      post_next_iteration_cb_(base_scheduler_.createSchedulableCallback(
+          [this]() -> void { runPostNextIterationCallbacks(); })),
       current_to_delete_(&to_delete_1_) {
   ASSERT(!name_.empty());
   FatalErrorHandler::registerFatalErrorHandler(*this);
@@ -180,7 +182,7 @@ SignalEventPtr DispatcherImpl::listenForSignal(int signal_num, SignalCb cb) {
   return SignalEventPtr{new SignalEventImpl(*this, signal_num, cb)};
 }
 
-void DispatcherImpl::post(std::function<void()> callback) {
+void DispatcherImpl::post(PostCb callback) {
   bool do_post;
   {
     Thread::LockGuard lock(post_lock_);
@@ -190,6 +192,19 @@ void DispatcherImpl::post(std::function<void()> callback) {
 
   if (do_post) {
     post_cb_->scheduleCallbackCurrentIteration();
+  }
+}
+
+void DispatcherImpl::postNextIteration(PostCb callback) {
+  bool do_post;
+  {
+    Thread::LockGuard lock(post_lock_);
+    do_post = post_next_iteration_callbacks_.empty();
+    post_next_iteration_callbacks_.push_back(callback);
+  }
+
+  if (do_post) {
+    post_next_iteration_cb_->scheduleCallbackNextIteration();
   }
 }
 
@@ -230,6 +245,27 @@ void DispatcherImpl::runPostCallbacks() {
       }
       callback = post_callbacks_.front();
       post_callbacks_.pop_front();
+    }
+    callback();
+  }
+}
+
+void DispatcherImpl::runPostNextIterationCallbacks() {
+  while (true) {
+    // It is important that this declaration is inside the body of the loop so that the callback is
+    // destructed while post_lock_ is not held. If callback is declared outside the loop and reused
+    // for each iteration, the previous iteration's callback is destructed when callback is
+    // re-assigned, which happens while holding the lock. This can lead to a deadlock (via
+    // recursive mutex acquisition) if destroying the callback runs a destructor, which through some
+    // callstack calls post() on this dispatcher.
+    std::function<void()> callback;
+    {
+      Thread::LockGuard lock(post_lock_);
+      if (post_next_iteration_callbacks_.empty()) {
+        return;
+      }
+      callback = post_next_iteration_callbacks_.front();
+      post_next_iteration_callbacks_.pop_front();
     }
     callback();
   }
