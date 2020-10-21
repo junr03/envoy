@@ -81,20 +81,24 @@ void DnsResolverImpl::initializeChannel(ares_options* options, int optmask) {
 
 void DnsResolverImpl::PendingResolution::onAresGetAddrInfoCallback(int status, int timeouts,
                                                                    ares_addrinfo* addrinfo) {
+  ENVOY_LOG(debug, "Resolution callback for {} with status={}", dns_name_, status);
   // We receive ARES_EDESTRUCTION when destructing with pending queries.
   if (status == ARES_EDESTRUCTION) {
+    ENVOY_LOG(debug, "ARES_EDESTRUCTION for {}", dns_name_);
     ASSERT(owned_);
     // This destruction might have been triggered by a peer PendingResolution that received a
     // ARES_ECONNREFUSED. If the PendingResolution has not been cancelled that means that the
     // callback_ target _should_ still be around. In that case, raise the callback_ so the target
     // can be done with this query and initiate a new one.
     if (!cancelled_) {
+      ENVOY_LOG(debug, "ARES_EDESTRUCTION for {} with cancelled query", dns_name_);
       callback_(ResolutionStatus::Failure, {});
     }
     delete this;
     return;
   }
   if (!fallback_if_failed_) {
+    ENVOY_LOG(debug, "Query for {} completed, no fallback", dns_name_);
     completed_ = true;
 
     // If c-ares returns ARES_ECONNREFUSED and there is no fallback we assume that the channel_ is
@@ -107,6 +111,7 @@ void DnsResolverImpl::PendingResolution::onAresGetAddrInfoCallback(int status, i
     // The channel cannot be destroyed and reinitialized here because that leads to a c-ares
     // segfault.
     if (status == ARES_ECONNREFUSED) {
+      ENVOY_LOG(debug, "ARES_ECONNREFUSED for {}", dns_name_);
       parent_.dirty_channel_ = true;
     }
   }
@@ -114,6 +119,7 @@ void DnsResolverImpl::PendingResolution::onAresGetAddrInfoCallback(int status, i
   std::list<DnsResponse> address_list;
   ResolutionStatus resolution_status;
   if (status == ARES_SUCCESS) {
+    ENVOY_LOG(debug, "ARES_SUCCESS for {}", dns_name_);
     resolution_status = ResolutionStatus::Success;
     if (addrinfo != nullptr && addrinfo->nodes != nullptr) {
       if (addrinfo->nodes->ai_family == AF_INET) {
@@ -123,9 +129,10 @@ void DnsResolverImpl::PendingResolution::onAresGetAddrInfoCallback(int status, i
           address.sin_family = AF_INET;
           address.sin_port = 0;
           address.sin_addr = reinterpret_cast<sockaddr_in*>(ai->ai_addr)->sin_addr;
-
+          auto envoy_address = std::make_shared<const Address::Ipv4Instance>(&address);
+          ENVOY_LOG(debug, "Adding ipv4 address ({}) for {}", envoy_address->ip()->addressAsString(), dns_name_);
           address_list.emplace_back(
-              DnsResponse(std::make_shared<const Address::Ipv4Instance>(&address),
+              DnsResponse(envoy_address,
                           std::chrono::seconds(ai->ai_ttl)));
         }
       } else if (addrinfo->nodes->ai_family == AF_INET6) {
@@ -135,20 +142,24 @@ void DnsResolverImpl::PendingResolution::onAresGetAddrInfoCallback(int status, i
           address.sin6_family = AF_INET6;
           address.sin6_port = 0;
           address.sin6_addr = reinterpret_cast<sockaddr_in6*>(ai->ai_addr)->sin6_addr;
+          auto envoy_address = std::make_shared<const Address::Ipv6Instance>(address);
+          ENVOY_LOG(debug, "Adding ipv6 address ({}) for {}", envoy_address->ip()->addressAsString(), dns_name_);
           address_list.emplace_back(
-              DnsResponse(std::make_shared<const Address::Ipv6Instance>(address),
+              DnsResponse(envoy_address,
                           std::chrono::seconds(ai->ai_ttl)));
         }
       }
     }
 
     if (!address_list.empty()) {
+      ENVOY_LOG(debug, "Completed for {} with empty address list", dns_name_);
       completed_ = true;
     }
 
     ASSERT(addrinfo != nullptr);
     ares_freeaddrinfo(addrinfo);
   } else {
+    ENVOY_LOG(debug, "Resolution failure for {}", dns_name_);
     resolution_status = ResolutionStatus::Failure;
   }
 
@@ -178,6 +189,7 @@ void DnsResolverImpl::PendingResolution::onAresGetAddrInfoCallback(int status, i
   }
 
   if (!completed_ && fallback_if_failed_) {
+    ENVOY_LOG(debug, "Falling back for {}", dns_name_);
     fallback_if_failed_ = false;
     getAddrInfo(AF_INET);
     // Note: Nothing can follow this call to getAddrInfo due to deletion of this
@@ -257,6 +269,7 @@ ActiveDnsQuery* DnsResolverImpl::resolve(const std::string& dns_name,
   if (pending_resolution->completed_) {
     // Resolution does not need asynchronous behavior or network events. For
     // example, localhost lookup.
+    ENVOY_LOG(debug, "Synchronous resolution for {}", dns_name);
     return nullptr;
   } else {
     // Enable timer to wake us up if the request times out.
