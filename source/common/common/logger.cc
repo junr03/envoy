@@ -14,12 +14,13 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/strip.h"
 #include "spdlog/spdlog.h"
+#include "spdlog/sinks/syslog_sink.h"
 
 namespace Envoy {
 namespace Logger {
 
 StandardLogger::StandardLogger(const std::string& name)
-    : Logger(std::make_shared<spdlog::logger>(name, Registry::getSink())) {}
+    : Logger(std::make_shared<spdlog::logger>(name, std::make_shared<spdlog::sinks::syslog_sink<std::mutex>>(name, 0, LOG_USER, false))) {}
 
 SinkDelegate::SinkDelegate(DelegatingLogSinkSharedPtr log_sink) : log_sink_(log_sink) {}
 
